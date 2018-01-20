@@ -1,11 +1,13 @@
 # Computational Active Depth from Defocus
 
-This repository contains a number of different models implemented for my thesis work [more info](https://averyma.github.io/publications/).
+My Master’s thesis focuses on 3D reconstruction technologies. I am building a novel active depth sensing system that infers depth by analyzing the blurriness of the projection pattern at different depth levels caused by camera defocus. Without relying on complex hardware, I constructed multiple parametric (Gaussian based) and non-parametric (DNN-based) computational models for depth inference. This repository contains a number of different models implemented for my thesis work [more info](https://averyma.github.io/publications/).
 
-<!-- The [official models](official) are a collection of example models that use TensorFlow's high-level APIs. They are intended to be well-maintained, tested, and kept up to date with the latest stable TensorFlow API. They should also be reasonably optimized for fast performance while still being easy to read. We especially recommend newer TensorFlow users to start here.
+## Parametric computational model (Gaussian-based):
+[Circular-symmetric 2D Gaussian](https://github.com/averyma/active-depth-from-defocus/tree/master/parametric_model/std_depth_inference_model) [[paper](http://openjournals.uwaterloo.ca/index.php/vsl/article/view/96)]
 
-The [research models](research) are a large collection of models implemented in TensorFlow by researchers. It is up to the individual researchers to maintain the models and/or provide support on issues and pull requests.
+[Elliptical 2D Gaussian:](https://github.com/averyma/active-depth-from-defocus/tree/master/parametric_model/minEigen_depth_inference_model) [[paper](https://icipe17.uwaterloo.ca/papers/27TMa.pdf)]
 
-The [samples folder](samples) contains code snippets and smaller models that demonstrate features of TensorFlow, including code presented in various blog posts.
+## Non-parametric computational model (DNN-based):
+The [/non_parametric_model/DfD_matlabNN/](https://github.com/averyma/active-depth-from-defocus/tree/master/non_parametric_model/DfD_matlabNN) folder contains a collection of models that are inplemented using the native Matlab Neural Network Toolbox: 1. CNN; 2. Fully-connected Feedforward; 3. Stacked-Autoencoder.
 
-The [tutorials folder](tutorials) is a collection of models described in the [TensorFlow tutorials](https://www.tensorflow.org/tutorials/). -->
+The [/non_parametric_model/DfD_tf/](https://github.com/averyma/active-depth-from-defocus/tree/master/non_parametric_model/DfD_tf) folder contains a collection of models that use TensorFlow's high-level APIs. [[paper](https://link.springer.com/chapter/10.1007/978-3-319-59876-5_5)]
