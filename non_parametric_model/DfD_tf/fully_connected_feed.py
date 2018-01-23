@@ -3,8 +3,6 @@ import tensorflow as tf
 import h5py
 import numpy as np
 
-
-
 # Read 
 dfd_dataset = h5py.File('datasets/dataset.hdf5', "r")
 train_data = np.array(dfd_dataset["train_data"][:], dtype = np.float32) # your train set features
@@ -13,16 +11,11 @@ train_label = np.array(dfd_dataset["train_label"][:]) # your train set labels
 test_data = np.array(dfd_dataset["test_data"][:], dtype = np.float32) # your test set features
 test_label = np.array(dfd_dataset["test_label"][:]) # your test set labels
 
-# Import MNIST data
-from tensorflow.examples.tutorials.mnist import input_data
-mnist = input_data.read_data_sets("/tmp/data/", one_hot=False)
-label = mnist.test.labels
-print(mnist.train.images.shape)
-
 # Reshape data
 train_data = train_data.reshape(train_data.shape[0],-1)
 test_data = test_data.reshape(test_data.shape[0],-1)
-print(train_data.shape)
+
+# Standardize data
 train_data = train_data/255.
 test_data = test_data/255.
 
