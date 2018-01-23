@@ -1,102 +1,122 @@
-# import dfd_data
+from __future__ import division, print_function, absolute_import
 import tensorflow as tf
+import h5py
+import numpy as np
 
-filenames = ["./train-00000-of-00002"]
-dfd_data = tf.data.TFRecordDataset(filenames)
+# Read 
+dfd_dataset = h5py.File('datasets/dataset.hdf5', "r")
+train_data = np.array(dfd_dataset["train_data"][:], dtype = np.float32) # your train set features
+train_label = np.array(dfd_dataset["train_label"][:]) # your train set labels
 
+test_data = np.array(dfd_dataset["test_data"][:], dtype = np.float32) # your test set features
+test_label = np.array(dfd_dataset["test_label"][:]) # your test set labels
 
-sess = tf.InteractiveSession()
+# Standardize data
+train_data = train_data/255.
+test_data = test_data/255.
 
-x = tf.placeholder(tf.float32, shape=[None, 400]) # image size : 20x20
-y_ = tf.placeholder(tf.float32, shape=[None, 10]) # depth label : 10
+# Training Parameters
+learning_rate = 0.001
+num_steps = 2000
+batch_size = 128
 
-W = tf.Variable(tf.zeros([400, 10]))
-b = tf.Variable(tf.zeros([10]))
-
-sess.run(tf.initialize_all_variables())
-
-y = tf.nn.softmax(tf.matmul(x, W) + b)
-
-cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y), reduction_indices=[1]))
-
-train_step = tf.train.GradientDescentOptimizer(0.5).minimize(cross_entropy)
-
-for i in range(1000):
-    batch = dfd_data.train.next_batch(100)
-    train_step.run(feed_dict={x: batch[0], y_: batch[1]})
-
-max_prediction = tf.argmax(y, 1)
-correct_prediction = tf.equal(tf.argmax(y, 1), tf.argmax(y_, 1))
-accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-
-print(accuracy.eval(feed_dict={x: dfd_data.test.images, y_: dfd_data.test.labels}))
-print(y.eval(feed_dict={x: [dfd_data.test.images[0], dfd_data.test.images[1]], y_: [dfd_data.test.labels[0], dfd_data.test.labels[1]]}))
-print(max_prediction.eval(feed_dict={x: [dfd_data.test.images[0], dfd_data.test.images[1]], y_: [dfd_data.test.labels[0], dfd_data.test.labels[1]]}))
-print(dfd_data.test.labels[0])
-print(dfd_data.test.labels[1])
+# Network Parameters
+num_input = 1200 # data input (img shape: 28*28)
+num_classes = 10 # total classes (0-9 digits)
+dropout = 0.25 # Dropout, probability to drop a unit
 
 
-def weight_variable(shape):
-    initial = tf.truncated_normal(shape, stddev=0.1)
-    return tf.Variable(initial)
+# Create the neural network
+def conv_net(x_dict, n_classes, dropout, reuse, is_training):
+    # Define a scope for reusing the variables
+    with tf.variable_scope('ConvNet', reuse=reuse):
+        # TF Estimator input is a dict, in case of multiple inputs
+        x = x_dict['images']
 
-def bias_variable(shape):
-    initial = tf.constant(0.1, shape=shape)
-    return tf.Variable(initial)
+        # Convolution Layer with 20 filters and a kernel size of 5
+        conv1 = tf.layers.conv2d(x, 32, 5, activation=tf.nn.relu)
+        # Max Pooling (down-sampling) with strides of 2 and kernel size of 2
+        # conv1 = tf.layers.max_pooling2d(conv1, 2, 2)
 
-def conv2d(x, W):
-    return tf.nn.conv2d(x, W, strides=[1, 1, 1, 1], padding='SAME')
+        # Convolution Layer with 64 filters and a kernel size of 3
+        conv2 = tf.layers.conv2d(conv1, 32, 5, activation=tf.nn.relu)
+        # Max Pooling (down-sampling) with strides of 2 and kernel size of 2
+        # conv2 = tf.layers.max_pooling2d(conv2, 2, 2)
 
-def max_pool_2x2(x):
-    return tf.nn.max_pool(x, ksize=[1, 2, 2, 1], strides=[1, 2, 2, 1], padding='SAME')
+        # Convolution Layer with 64 filters and a kernel size of 3
+        conv3 = tf.layers.conv2d(conv2, 32, 5, activation=tf.nn.relu)
+        # Max Pooling (down-sampling) with strides of 2 and kernel size of 2
+        # conv3 = tf.layers.max_pooling2d(conv3, 2, 2)
 
-W_conv1 = weight_variable([5, 5, 1, 32])
-b_conv1 = bias_variable([32])
+        # Flatten the data to a 1-D vector for the fully connected layer
+        fc1 = tf.contrib.layers.flatten(conv3)
 
-x_image = tf.reshape(x, [-1, 28, 28, 1])
+        # Fully connected layer (in tf contrib folder for now)
+        fc1 = tf.layers.dense(fc1, 1024)
+        # Apply Dropout (if is_training is False, dropout is not applied)
+        fc1 = tf.layers.dropout(fc1, rate=dropout, training=is_training)
 
-h_conv1 = tf.nn.relu(conv2d(x_image, W_conv1) + b_conv1)
-h_pool1 = max_pool_2x2(h_conv1)
+        # Output layer, class prediction
+        out = tf.layers.dense(fc1, n_classes)
 
-W_conv2 = weight_variable([5, 5, 32, 64])
-b_conv2 = bias_variable([64])
-
-h_conv2 = tf.nn.relu(conv2d(h_pool1, W_conv2) + b_conv2)
-h_pool2 = max_pool_2x2(h_conv2)
-
-W_fc1 = weight_variable([7*7*64, 1024])
-b_fc1 = bias_variable([1024])
-
-h_pool2_flat = tf.reshape(h_pool2, [-1, 7*7*64])
-h_fc1 = tf.nn.relu(tf.matmul(h_pool2_flat, W_fc1) + b_fc1)
-
-keep_prob = tf.placeholder(tf.float32)
-h_fc1_drop = tf.nn.dropout(h_fc1, keep_prob)
-
-W_fc2 = weight_variable([1024, 10])
-b_fc2 = bias_variable([10])
-
-y_conv = tf.nn.softmax(tf.matmul(h_fc1_drop, W_fc2) + b_fc2)
+    return out
 
 
-cross_entropy = tf.reduce_mean(-tf.reduce_sum(y_ * tf.log(y_conv), reduction_indices=[1]))
-train_step = tf.train.AdamOptimizer(1e-3).minimize(cross_entropy)
-correct_prediction = tf.equal(tf.argmax(y_conv,1), tf.argmax(y_,1))
-accuracy = tf.reduce_mean(tf.cast(correct_prediction, tf.float32))
-sess.run(tf.initialize_all_variables())
+# Define the model function (following TF Estimator Template)
+def model_fn(features, labels, mode):
+    # Build the neural network
+    # Because Dropout have different behavior at training and prediction time, we
+    # need to create 2 distinct computation graphs that still share the same weights.
+    logits_train = conv_net(features, num_classes, dropout, reuse=False,
+                            is_training=True)
+    logits_test = conv_net(features, num_classes, dropout, reuse=True,
+                           is_training=False)
 
-saver = tf.train.Saver()
-with tf.device("/gpu:0"):
-    for i in range(50000):
-        batch = dfd_data.train.next_batch(50)
-        if i%500 == 0:
-            train_accuracy = accuracy.eval(feed_dict={
-                x:batch[0], y_: batch[1], keep_prob: 1.0})
-            print("step %d, training accuracy %g"%(i, train_accuracy))
-            save_path = saver.save(sess, "/home/yeephycho/Desktop/tf_input_jpg/model.ckpt")
-            print("model saved in file: %s" %save_path)
+    # Predictions
+    pred_classes = tf.argmax(logits_test, axis=1)
+    pred_probas = tf.nn.softmax(logits_test)
 
-        train_step.run(feed_dict={x: batch[0], y_: batch[1], keep_prob: 0.5})
-print("test accuracy %g"%accuracy.eval(feed_dict={x: dfd_data.test.images, y_: dfd_data.test.labels, keep_prob: 1.0}))
-save_path = saver.save(sess, "/home/yeephycho/Desktop/tf_input_jpg/model.ckpt")
-print("model saved in file: %s" %save_path)
+    # If prediction mode, early return
+    if mode == tf.estimator.ModeKeys.PREDICT:
+        return tf.estimator.EstimatorSpec(mode, predictions=pred_classes)
+
+    # Define loss and optimizer
+    loss_op = tf.reduce_mean(tf.nn.sparse_softmax_cross_entropy_with_logits(
+        logits=logits_train, labels=tf.cast(labels, dtype=tf.int32)))
+    optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate)
+    train_op = optimizer.minimize(loss_op,
+                                  global_step=tf.train.get_global_step())
+
+    # Evaluate the accuracy of the model
+    acc_op = tf.metrics.accuracy(labels=labels, predictions=pred_classes)
+
+    # TF Estimators requires to return a EstimatorSpec, that specify
+    # the different ops for training, evaluating, ...
+    estim_specs = tf.estimator.EstimatorSpec(
+        mode=mode,
+        predictions=pred_classes,
+        loss=loss_op,
+        train_op=train_op,
+        eval_metric_ops={'accuracy': acc_op})
+
+    return estim_specs
+
+# Build the Estimator
+model = tf.estimator.Estimator(model_fn)
+
+# Define the input function for training
+input_fn = tf.estimator.inputs.numpy_input_fn(
+    x={'images': train_data}, y=train_label,
+    batch_size=batch_size, num_epochs=None, shuffle=True)
+# Train the Model
+model.train(input_fn, steps=num_steps)
+
+# Evaluate the Model
+# Define the input function for evaluating
+input_fn = tf.estimator.inputs.numpy_input_fn(
+    x={'images': train_data}, y=train_data,
+    batch_size=batch_size, shuffle=False)
+# Use the Estimator 'evaluate' method
+e = model.evaluate(input_fn)
+
+print("Testing Accuracy:", e['accuracy'])
