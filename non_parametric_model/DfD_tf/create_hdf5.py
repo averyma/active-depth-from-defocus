@@ -47,17 +47,17 @@ test_shape = (len(test_path), 20, 20, 3)
 hdf5_file = h5py.File(hdf5_path, mode = 'w')
 hdf5_file.create_dataset("train_data", train_shape, np.int8)
 hdf5_file.create_dataset("test_data", test_shape, np.int8)
-hdf5_file.create_dataset("train_mean", train_shape[1:], np.float32)
+# hdf5_file.create_dataset("train_mean", train_shape[1:], np.float32)
 
-hdf5_file.create_dataset("train_labels", (len(train_path),), np.int8)
-hdf5_file["train_labels"][...] = train_labels
-hdf5_file.create_dataset("test_labels", (len(test_path),), np.int8)
-hdf5_file["test_labels"][...] = test_labels
+hdf5_file.create_dataset("train_label", (len(train_path),), np.int8)
+hdf5_file["train_label"][...] = train_labels
+hdf5_file.create_dataset("test_label", (len(test_path),), np.int8)
+hdf5_file["test_label"][...] = test_labels
 
 
 #### load/save images ####
 # a numpy array to save the mean of the images
-mean = np.zeros(train_shape[1:], np.float32)
+# mean = np.zeros(train_shape[1:], np.float32)
 # loop over train addresses
 for i in range(len(train_path)):
     # print how many images are saved every 1000 images
@@ -72,7 +72,7 @@ for i in range(len(train_path)):
     # add any image pre-processing here
     # save the image and calculate the mean so far
     hdf5_file["train_data"][i, ...] = img[None]
-    mean += img / float(len(train_labels))
+    # mean += img / float(len(train_labels))
 # loop over test addresses
 for i in range(len(test_path)):
     # print how many images are saved every 1000 images
@@ -88,5 +88,5 @@ for i in range(len(test_path)):
     # save the image
     hdf5_file["test_data"][i, ...] = img[None]
 # save the mean and close the hdf5 file
-hdf5_file["train_mean"][...] = mean
+# hdf5_file["train_mean"][...] = mean
 hdf5_file.close()

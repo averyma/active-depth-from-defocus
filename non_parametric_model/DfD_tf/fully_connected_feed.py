@@ -1,26 +1,30 @@
-""" Neural Network.
-
-A 2-Hidden Layers Fully Connected Neural Network (a.k.a Multilayer Perceptron)
-implementation with TensorFlow. This example is using the MNIST database
-of handwritten digits (http://yann.lecun.com/exdb/mnist/).
-
-This example is using TensorFlow layers, see 'neural_network_raw' example for
-a raw implementation with variables.
-
-Links:
-    [MNIST Dataset](http://yann.lecun.com/exdb/mnist/).
-
-Author: Aymeric Damien
-Project: https://github.com/aymericdamien/TensorFlow-Examples/
-"""
-
 from __future__ import print_function
+import tensorflow as tf
+import h5py
+import numpy as np
+
+
+
+# Read 
+dfd_dataset = h5py.File('datasets/dataset.hdf5', "r")
+train_data = np.array(dfd_dataset["train_data"][:], dtype = np.float32) # your train set features
+train_label = np.array(dfd_dataset["train_label"][:]) # your train set labels
+
+test_data = np.array(dfd_dataset["test_data"][:], dtype = np.float32) # your test set features
+test_label = np.array(dfd_dataset["test_label"][:]) # your test set labels
 
 # Import MNIST data
 from tensorflow.examples.tutorials.mnist import input_data
 mnist = input_data.read_data_sets("/tmp/data/", one_hot=False)
+label = mnist.test.labels
+print(mnist.train.images.shape)
 
-import tensorflow as tf
+# Reshape data
+train_data = train_data.reshape(train_data.shape[0],-1)
+test_data = test_data.reshape(test_data.shape[0],-1)
+print(train_data.shape)
+train_data = train_data/255.
+test_data = test_data/255.
 
 # Parameters
 learning_rate = 0.1
@@ -29,19 +33,19 @@ batch_size = 128
 display_step = 100
 
 # Network Parameters
-n_hidden_1 = 256 # 1st layer number of neurons
-n_hidden_2 = 256 # 2nd layer number of neurons
-num_input = 784 # MNIST data input (img shape: 28*28)
-num_classes = 10 # MNIST total classes (0-9 digits)
+n_hidden_1 = 512 # 1st layer number of neurons
+n_hidden_2 = 512 # 2nd layer number of neurons
+num_input = 1200 # data input (img shape: 20*20*3)
+num_classes = 10 #  total classes (0-9 depth labels)
 
 
 # Define the neural network
 def neural_net(x_dict):
     # TF Estimator input is a dict, in case of multiple inputs
     x = x_dict['images']
-    # Hidden fully connected layer with 256 neurons
+    # Hidden fully connected layer1
     layer_1 = tf.layers.dense(x, n_hidden_1)
-    # Hidden fully connected layer with 256 neurons
+    # Hidden fully connected layer2
     layer_2 = tf.layers.dense(layer_1, n_hidden_2)
     # Output fully connected layer with a neuron for each class
     out_layer = tf.layers.dense(layer_2, num_classes)
@@ -87,7 +91,7 @@ model = tf.estimator.Estimator(model_fn)
 
 # Define the input function for training
 input_fn = tf.estimator.inputs.numpy_input_fn(
-    x={'images': mnist.train.images}, y=mnist.train.labels,
+    x={'images': train_data}, y=train_label,
     batch_size=batch_size, num_epochs=None, shuffle=True)
 # Train the Model
 model.train(input_fn, steps=num_steps)
@@ -95,7 +99,7 @@ model.train(input_fn, steps=num_steps)
 # Evaluate the Model
 # Define the input function for evaluating
 input_fn = tf.estimator.inputs.numpy_input_fn(
-    x={'images': mnist.test.images}, y=mnist.test.labels,
+    x={'images': test_data}, y=test_label,
     batch_size=batch_size, shuffle=False)
 # Use the Estimator 'evaluate' method
 e = model.evaluate(input_fn)
