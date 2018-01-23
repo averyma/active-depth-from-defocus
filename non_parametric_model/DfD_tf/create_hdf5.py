@@ -45,8 +45,8 @@ test_shape = (len(test_path), 20, 20, 3)
 
 # open a hdf5 file and create earrays
 hdf5_file = h5py.File(hdf5_path, mode = 'w')
-hdf5_file.create_dataset("train_img", train_shape, np.int8)
-hdf5_file.create_dataset("test_img", test_shape, np.int8)
+hdf5_file.create_dataset("train_data", train_shape, np.int8)
+hdf5_file.create_dataset("test_data", test_shape, np.int8)
 hdf5_file.create_dataset("train_mean", train_shape[1:], np.float32)
 
 hdf5_file.create_dataset("train_labels", (len(train_path),), np.int8)
@@ -71,7 +71,7 @@ for i in range(len(train_path)):
     # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     # add any image pre-processing here
     # save the image and calculate the mean so far
-    hdf5_file["train_img"][i, ...] = img[None]
+    hdf5_file["train_data"][i, ...] = img[None]
     mean += img / float(len(train_labels))
 # loop over test addresses
 for i in range(len(test_path)):
@@ -86,7 +86,7 @@ for i in range(len(test_path)):
     # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
     # add any image pre-processing here
     # save the image
-    hdf5_file["test_img"][i, ...] = img[None]
+    hdf5_file["test_data"][i, ...] = img[None]
 # save the mean and close the hdf5 file
 hdf5_file["train_mean"][...] = mean
 hdf5_file.close()
