@@ -8,6 +8,6 @@ My Master’s thesis focuses on 3D reconstruction technologies. I am building a 
 [Elliptical 2D Gaussian:](https://github.com/averyma/active-depth-from-defocus/tree/master/parametric_model/minEigen_depth_inference_model) [[paper](https://icipe17.uwaterloo.ca/papers/27TMa.pdf)]
 
 ## Non-parametric computational model (DNN-based):
-The [/non_parametric_model/DfD_matlabNN/](https://github.com/averyma/active-depth-from-defocus/tree/master/non_parametric_model/DfD_matlabNN) folder contains a collection of models that are inplemented using the native Matlab Neural Network Toolbox. [[paper](https://link.springer.com/chapter/10.1007/978-3-319-59876-5_5)]
+The [DfD_matlabNN](https://github.com/averyma/active-depth-from-defocus/tree/master/non_parametric_model/DfD_matlabNN) folder contains a collection of models that are inplemented using the native Matlab Neural Network Toolbox. [[paper](https://link.springer.com/chapter/10.1007/978-3-319-59876-5_5)]
 
-The [/non_parametric_model/DfD_tf/](https://github.com/averyma/active-depth-from-defocus/tree/master/non_parametric_model/DfD_tf) folder contains a collection of models that use TensorFlow's high-level APIs.
+The [DfD_tf](https://github.com/averyma/active-depth-from-defocus/tree/master/non_parametric_model/DfD_tf) folder contains a collection of models that use TensorFlow's high-level APIs. [[paper](http://openjournals.uwaterloo.ca/index.php/vsl/article/view/165)]
