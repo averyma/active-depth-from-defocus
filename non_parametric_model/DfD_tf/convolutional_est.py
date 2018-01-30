@@ -1,4 +1,3 @@
-from __future__ import division, print_function, absolute_import
 import tensorflow as tf
 import h5py
 import numpy as np
