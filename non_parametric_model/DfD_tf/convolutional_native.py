@@ -17,7 +17,7 @@ test_data = test_data/255.
 
 # Hyperparameters
 learning_rate = 0.001
-num_epochs = 10
+num_epochs = 100
 batch_size = 64
 
 # Network Parameters
@@ -28,7 +28,7 @@ conv2_kernel_size = 5 # 2st layer kernel size
 conv3_filter = 128 # 3st layer number of filters
 conv3_kernel_size = 5 # 3st layer kernel size
 dropout = 0.25
-num_classes = 10 #  total classes (0-9 depth labels)
+num_classes = 10 #  total classes (10 depth labels)
 num_examples = train_data.shape[0]
 n_H = train_data.shape[1]
 n_W = train_data.shape[2]
