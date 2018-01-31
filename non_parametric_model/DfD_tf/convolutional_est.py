@@ -4,11 +4,11 @@ import numpy as np
 
 # Read 
 dfd_dataset = h5py.File('datasets/dataset.hdf5', "r")
-train_data = np.array(dfd_dataset["train_data"][:], dtype = np.float32) # your train set features
-train_label = np.array(dfd_dataset["train_label"][:]) # your train set labels
+train_data = np.array(dfd_dataset["train_data"][:], dtype = np.float32)
+train_label = np.array(dfd_dataset["train_label"][:])
 
-test_data = np.array(dfd_dataset["test_data"][:], dtype = np.float32) # your test set features
-test_label = np.array(dfd_dataset["test_label"][:]) # your test set labels
+test_data = np.array(dfd_dataset["test_data"][:], dtype = np.float32)
+test_label = np.array(dfd_dataset["test_label"][:])
 
 # Standardize data
 train_data = train_data/255.
@@ -16,49 +16,57 @@ test_data = test_data/255.
 
 # Training Parameters
 learning_rate = 0.001
-num_steps = 2000
-batch_size = 128
+num_epochs = 100
+batch_size = 64
 
 # Network Parameters
-num_input = 1200 # data input (img shape: 28*28)
-num_classes = 10 # total classes (0-9 digits)
-dropout = 0.25 # Dropout, probability to drop a unit
-
+conv1_filter = 32 # 1st layer number of filters
+conv1_kernel_size = 5 # 1st layer kernel size
+conv2_filter = 64 # 2st layer number of filters
+conv2_kernel_size = 5 # 2st layer kernel size
+conv3_filter = 128 # 3st layer number of filters
+conv3_kernel_size = 5 # 3st layer kernel size
+dropout = 0.25
+num_classes = 10 #  total classes (10 depth labels)
+num_examples = train_data.shape[0]
+n_H = train_data.shape[1]
+n_W = train_data.shape[2]
+n_C = train_data.shape[3]
+print_cost = True
 
 # Create the neural network
-def conv_net(x_dict, n_classes, dropout, reuse, is_training):
+def convnet(x_dict, n_classes, dropout, reuse, is_training):
+    
     # Define a scope for reusing the variables
     with tf.variable_scope('ConvNet', reuse=reuse):
         # TF Estimator input is a dict, in case of multiple inputs
         x = x_dict['images']
 
-        # Convolution Layer with 20 filters and a kernel size of 5
-        conv1 = tf.layers.conv2d(x, 32, 5, activation=tf.nn.relu)
-        # Max Pooling (down-sampling) with strides of 2 and kernel size of 2
-        # conv1 = tf.layers.max_pooling2d(conv1, 2, 2)
+        # layer 1:
+        Z1 = tf.layers.conv2d(x, conv1_filter, conv1_kernel_size, activation=tf.nn.relu)
+        # Z1 = tf.layers.max_pooling2d(Z1, 2, 2)
 
-        # Convolution Layer with 64 filters and a kernel size of 3
-        conv2 = tf.layers.conv2d(conv1, 32, 5, activation=tf.nn.relu)
-        # Max Pooling (down-sampling) with strides of 2 and kernel size of 2
-        # conv2 = tf.layers.max_pooling2d(conv2, 2, 2)
+        # layer 2:
+        Z2 = tf.layers.conv2d(Z1, conv2_filter, conv2_kernel_size, activation=tf.nn.relu)
+        # Z2 = tf.layers.max_pooling2d(Z2, 2, 2)
 
-        # Convolution Layer with 64 filters and a kernel size of 3
-        conv3 = tf.layers.conv2d(conv2, 32, 5, activation=tf.nn.relu)
-        # Max Pooling (down-sampling) with strides of 2 and kernel size of 2
-        # conv3 = tf.layers.max_pooling2d(conv3, 2, 2)
+        # layer 3:
+        Z3 = tf.layers.conv2d(Z2, conv3_filter, conv3_kernel_size, activation=tf.nn.relu)
+        # Z3 = tf.layers.max_pooling2d(Z3, 2, 2)
 
         # Flatten the data to a 1-D vector for the fully connected layer
-        fc1 = tf.contrib.layers.flatten(conv3)
+        FC1 = tf.contrib.layers.flatten(Z3)
 
-        # Fully connected layer (in tf contrib folder for now)
-        fc1 = tf.layers.dense(fc1, 1024)
-        # Apply Dropout (if is_training is False, dropout is not applied)
-        fc1 = tf.layers.dropout(fc1, rate=dropout, training=is_training)
+        # Fully connected layer 
+        FC1 = tf.layers.dense(FC1, 1024)
+
+        # Apply Dropout
+        D = tf.layers.dropout(FC1, rate=dropout, training=is_training)
 
         # Output layer, class prediction
-        out = tf.layers.dense(fc1, n_classes)
+        Z = tf.layers.dense(D, n_classes)
 
-    return out
+    return Z
 
 
 # Define the model function (following TF Estimator Template)
@@ -66,9 +74,9 @@ def model_fn(features, labels, mode):
     # Build the neural network
     # Because Dropout have different behavior at training and prediction time, we
     # need to create 2 distinct computation graphs that still share the same weights.
-    logits_train = conv_net(features, num_classes, dropout, reuse=False,
+    logits_train = convnet(features, num_classes, dropout, reuse=False,
                             is_training=True)
-    logits_test = conv_net(features, num_classes, dropout, reuse=True,
+    logits_test = convnet(features, num_classes, dropout, reuse=True,
                            is_training=False)
 
     # Predictions
@@ -108,7 +116,7 @@ input_fn = tf.estimator.inputs.numpy_input_fn(
     x={'images': train_data}, y=train_label,
     batch_size=batch_size, num_epochs=None, shuffle=True)
 # Train the Model
-model.train(input_fn, steps=num_steps)
+model.train(input_fn, steps=num_epochs)
 
 # Evaluate the Model
 # Define the input function for evaluating
