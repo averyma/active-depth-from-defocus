@@ -1,4 +1,3 @@
-from __future__ import print_function
 import tensorflow as tf
 import h5py
 import numpy as np
@@ -20,20 +19,18 @@ train_data = train_data/255.
 test_data = test_data/255.
 
 # Parameters
-learning_rate = 0.1
-num_steps = 1000
-batch_size = 128
-display_step = 100
+learning_rate = 0.01
+num_epochs = 10
+batch_size = 64
 
 # Network Parameters
 n_hidden_1 = 512 # 1st layer number of neurons
-n_hidden_2 = 512 # 2nd layer number of neurons
-num_input = 1200 # data input (img shape: 20*20*3)
-num_classes = 10 #  total classes (0-9 depth labels)
-
+n_hidden_2 = 256 # 2nd layer number of neurons
+num_input = train_data.shape[1] # data input (img shape: 20*20*3)
+num_classes = 10 #  total classes (10 depth labels)
 
 # Define the neural network
-def neural_net(x_dict):
+def fully_connected(x_dict):
     # TF Estimator input is a dict, in case of multiple inputs
     x = x_dict['images']
     # Hidden fully connected layer1
@@ -44,11 +41,10 @@ def neural_net(x_dict):
     out_layer = tf.layers.dense(layer_2, num_classes)
     return out_layer
 
-
 # Define the model function (following TF Estimator Template)
 def model_fn(features, labels, mode):
     # Build the neural network
-    logits = neural_net(features)
+    logits = fully_connected(features)
 
     # Predictions
     pred_classes = tf.argmax(logits, axis=1)
@@ -87,7 +83,7 @@ input_fn = tf.estimator.inputs.numpy_input_fn(
     x={'images': train_data}, y=train_label,
     batch_size=batch_size, num_epochs=None, shuffle=True)
 # Train the Model
-model.train(input_fn, steps=num_steps)
+model.train(input_fn, steps=num_epochs)
 
 # Evaluate the Model
 # Define the input function for evaluating
