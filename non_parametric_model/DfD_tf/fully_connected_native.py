@@ -5,11 +5,11 @@ import numpy as np
 
 # Read 
 dfd_dataset = h5py.File('datasets/dataset.hdf5', "r")
-train_data = np.array(dfd_dataset["train_data"][:], dtype = np.float32) # your train set features
-train_label = np.array(dfd_dataset["train_label"][:]) # your train set labels
+train_data = np.array(dfd_dataset["train_data"][:], dtype = np.float32)
+train_label = np.array(dfd_dataset["train_label"][:])
 
-test_data = np.array(dfd_dataset["test_data"][:], dtype = np.float32) # your test set features
-test_label = np.array(dfd_dataset["test_label"][:]) # your test set labels
+test_data = np.array(dfd_dataset["test_data"][:], dtype = np.float32)
+test_label = np.array(dfd_dataset["test_label"][:])
 
 # Reshape data: data.shape: (flattened image, # of examples)
 train_data = train_data.reshape(train_data.shape[0],-1).T
@@ -20,7 +20,7 @@ train_data = train_data/255.
 test_data = test_data/255.
 
 # Hyperparameters
-learning_rate = 0.1
+learning_rate = 0.01
 num_epochs = 100
 batch_size = 64
 
@@ -28,7 +28,7 @@ batch_size = 64
 n_hidden_1 = 512 # 1st layer number of neurons
 n_hidden_2 = 256 # 2nd layer number of neurons
 num_input = train_data.shape[0] # data input (img shape: 20*20*3)
-num_classes = 10 #  total classes (0-9 depth labels)
+num_classes = 10 #  total classes (10 depth labels)
 num_examples = train_data.shape[1]
 print_cost = True
 
@@ -51,7 +51,7 @@ def initialize_parameters():
     
     return parameters
 
-# convert label to one-shot
+# Convert label to one-shot
 def convert_to_one_hot(label, num_classes):
     label = np.eye(num_classes)[label.reshape(-1)].T
     return label
@@ -59,16 +59,17 @@ def convert_to_one_hot(label, num_classes):
 # Creates a list of random batches from (data, label)
 def random_batches(data, label, batch_size = 64, seed = 0):
 
-    m = data.shape[1]                  # number of training examples
+    # number of training examples
+    m = data.shape[1]                  
     batches = []
     np.random.seed(seed)
 
-    # Shuffle (X, Y)
+    # Shuffle (data, label)
     permutation = list(np.random.permutation(m))
     shuffled_data = data[:, permutation]
     shuffled_label = label[:, permutation].reshape((label.shape[0],m))
 
-    # Partition (shuffled_X, shuffled_Y). Minus the end case.
+    # Partition (shuffled_data, shuffled_label). Minus the end case.
     num_complete_batches = math.floor(m/batch_size) # number of  batches of size batch_size in your partitionning
     for k in range(0, num_complete_batches):
         batch_data = shuffled_data[:, k * batch_size : k * batch_size + batch_size]
@@ -76,7 +77,7 @@ def random_batches(data, label, batch_size = 64, seed = 0):
         batch = (batch_data, batch_label)
         batches.append(batch)
     
-    # Handling the end case (last -batch < batch_size)
+    # Handling the end case
     if m % batch_size != 0:
         batch_data = shuffled_data[:, num_complete_batches * batch_size : m]
         batch_label = shuffled_label[:, num_complete_batches * batch_size : m]
@@ -107,11 +108,10 @@ def fully_connected(data, parameters):
     return Z
 
 # Compute cost using the output of the fully-connected layer and the label
-def compute_cost(Z, Y):    
+def compute_cost(Z, label):    
 
     logits = tf.transpose(Z)
-    labels = tf.transpose(Y)
-    
+    labels = tf.transpose(label)
     cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits(logits = logits, labels = labels))
     
     return cost
